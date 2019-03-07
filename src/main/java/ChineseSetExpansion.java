@@ -246,7 +246,7 @@ public class ChineseSetExpansion {
 
         System.out.println("第0次迭代：" + entities);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             for (String entity : entities) {
                 try {
                     search(indexDir, entity);
