@@ -2,6 +2,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.flexible.standard.parser.StandardSyntaxParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -14,7 +15,7 @@ import java.util.regex.Matcher;
 
 public class ChineseSetExpansion {
 
-    static final int maxLength = 5;
+    static final int maxLength = 4;
 
     static final int minLength = 2;
 
@@ -29,6 +30,8 @@ public class ChineseSetExpansion {
     static Set<String> entities = new HashSet<String>(); //实体集
 
     static Map<String, Integer> undeterminedEntities = new HashMap<String, Integer>(); //待定的实体集，要把出现次数最多的部分添加到最终的实体集里
+
+    static Map<String, String> relation = new HashMap<String, String>();
 
     public static void search(String indexDir, String q) throws Exception {
 
@@ -52,7 +55,7 @@ public class ChineseSetExpansion {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
 
 
-            String line = null;
+            String line;
             while ((line = bufferedReader.readLine()) != null) {
 
                 line = line.replace((char) 12288, ' ');
@@ -133,6 +136,7 @@ public class ChineseSetExpansion {
             if (set.contains(list.get(j).getKey())) {
                 j++;
             } else {
+//                for(String )
                 set.add((String) list.get(j).getKey());
                 j++;
                 count++;
@@ -176,6 +180,7 @@ public class ChineseSetExpansion {
 
         TopDocs docs = searcher.search(query, 1000);//开始查询，查询前条数据，将记录保存在docs中
 
+
         for (ScoreDoc scoreDoc : docs.scoreDocs) { //取出每条查询结果
             Document doc = searcher.doc(scoreDoc.doc); //scoreDoc.doc相当于docID,根据这个docID来获取文档
 //            System.out.println(doc.get("fullPath")); //fullPath是刚刚建立索引的时候我们定义的一个字段
@@ -196,16 +201,8 @@ public class ChineseSetExpansion {
 
                 getEntities(context, line);
             }
-
-
-//            String line = bufferedReader.readLine();
-//            line = line.replaceAll("[\\pP‘’“”]", "");
-//            line = line.replaceAll("\\d+", "");
-//            context = context.replaceAll(" ", "");
-//
-//            getEntities(context, line);
         }
-        System.out.println(undeterminedEntities);
+//        System.out.println(undeterminedEntities);
 //        rankMapByValue(undeterminedEntities, entities, 3, new Comparator<Integer>() {
 //            @Override
 //            public int compare(Integer o1, Integer o2) {
@@ -245,9 +242,15 @@ public class ChineseSetExpansion {
                 if (!entities.contains(undeterminedEntity)) {
                     if (undeterminedEntities.containsKey(undeterminedEntity)) {
                         Integer count = undeterminedEntities.get(undeterminedEntity);
+                        if (!relation.get(undeterminedEntity).equals(context)) {
+                            count *= 2;
+                            relation.put(undeterminedEntity, context);
+                            System.out.println("HAHAHAHAHAHA:" + undeterminedEntity);
+                        }
                         undeterminedEntities.put(undeterminedEntity, count + 1);
                     } else {
                         undeterminedEntities.put(undeterminedEntity, 1);
+                        relation.put(undeterminedEntity, context);
                     }
                 }
             }
@@ -264,13 +267,13 @@ public class ChineseSetExpansion {
 
         String indexDir = "/Users/pengwei/IdeaProjects/myLucene/THUCNewsIndex";
 
-        entities.add("冠心病");
-        entities.add("骨癌");
-        entities.add("白血病");
-        entities.add("尿毒症");
-        entities.add("地中海贫血");
+        entities.add("武汉");
+        entities.add("杭州");
+        entities.add("深圳");
+        entities.add("西安");
+        entities.add("哈尔滨");
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             for (String entity : entities) {
                 try {
                     search(indexDir, entity);
@@ -284,7 +287,7 @@ public class ChineseSetExpansion {
                     return Integer.compare(o1, o2);
                 }
             });
-            System.out.println(contextsSet);
+//            System.out.println(contextsSet);
             for (String context : contextsSet) {
                 try {
                     searchEntities(indexDir, context);
@@ -292,7 +295,7 @@ public class ChineseSetExpansion {
                     e.printStackTrace();
                 }
             }
-            rankMapByValue(undeterminedEntities, entities, 3, new Comparator<Integer>() {
+            rankMapByValue(undeterminedEntities, entities, 5, new Comparator<Integer>() {
                 @Override
                 public int compare(Integer o1, Integer o2) {
                     return Integer.compare(o1, o2);
@@ -304,4 +307,14 @@ public class ChineseSetExpansion {
         }
     }
 }
+
+//class Relation{
+//    String context;
+//    String entity;
+//
+//    public Relation(String context, String entity){
+//        this.context = context;
+//        this.entity = entity;
+//    }
+//}
 
