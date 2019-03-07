@@ -24,15 +24,15 @@
 
 国家名称抽取：
 
-![avatar](https://ws3.sinaimg.cn/large/006tKfTcly1g0u7s0z9d2j321q0d4n5p.jpg)
+![avatar](https://github.com/PengWei98/ChineseSetExpansion/blob/master/pic/country.png)
 
 省份名称抽取：
 
-![avatar](https://ws1.sinaimg.cn/large/006tKfTcly1g0u7j8emvej322c0d2jz0.jpg)
+![avatar](https://github.com/PengWei98/ChineseSetExpansion/blob/master/pic/province.png)
 
 公司名称抽取：
 
-![avatar](https://ws4.sinaimg.cn/large/006tKfTcly1g0u7mx6x5gj322c0pm7q1.jpg)
+![avatar](https://github.com/PengWei98/ChineseSetExpansion/blob/master/pic/company.png)
 
 
 
