@@ -2,7 +2,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.flexible.standard.parser.StandardSyntaxParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -15,25 +14,29 @@ import java.util.regex.Matcher;
 
 public class ChineseSetExpansion {
 
-    static final int maxLength = 4;
+    static final String indexDir = "/Users/pengwei/IdeaProjects/myLucene/THUCNewsIndex"; //lucene建得索引文件的路径
 
-    static final int minLength = 2;
+    static final int maxLength = 3; //实体最大长度，使用时可修改
 
-    static final String regex = "{" + minLength + "," + maxLength + "}";
+    static final int minLength = 2; //实体最短长度，使用时可修改
 
-    static final int windowSize = 3;
+    static final String regex = "{" + minLength + "," + maxLength + "}"; //用于匹配的正则表达式
 
-    static HashMap<String, Integer> contexts = new HashMap<String, Integer>();
+    static final int windowSize = 3; //滑动窗口大小，使用时可修改
 
-    static HashSet<String> contextsSet = new HashSet<String>();
+    static final int times = 20; //迭代次数
 
-    static Set<String> entities = new HashSet<String>(); //实体集
+    static HashMap<String, Integer> undeterminedContexts = new HashMap<String, Integer>();
+
+    static HashSet<String> contextSet = new HashSet<String>();
+
+    static Set<String> entitySet = new HashSet<String>(); //实体集
 
     static Map<String, Integer> undeterminedEntities = new HashMap<String, Integer>(); //待定的实体集，要把出现次数最多的部分添加到最终的实体集里
 
     static Map<String, String> relation = new HashMap<String, String>();
 
-    public static void search(String indexDir, String q) throws Exception {
+    public static void searchContext(String indexDir, String q) throws Exception {
 
         Directory dir = FSDirectory.open(Paths.get(indexDir)); //获取要查询的路径，也就是索引所在的位置
         IndexReader reader = DirectoryReader.open(dir);
@@ -71,11 +74,11 @@ public class ChineseSetExpansion {
                 if (start != -1) { //start==-1时，表明该实体不是该行子串
                     String context = getContext(q, line, start, end, windowSize);
 //                    System.out.println(context);
-                    if (contexts.containsKey(context)) {
-                        Integer x = contexts.get(context);
-                        contexts.put(context, x + 1);
+                    if (undeterminedContexts.containsKey(context)) {
+                        Integer x = undeterminedContexts.get(context);
+                        undeterminedContexts.put(context, x + 1);
                     } else {
-                        contexts.put(context, 1);
+                        undeterminedContexts.put(context, 1);
                     }
                 }
             }
@@ -128,9 +131,6 @@ public class ChineseSetExpansion {
                 String entity = (String) list.get(j).getKey();
                 for(String str : set){
                     if(entity.indexOf(str) != -1){
-//                        set.add((String) list.get(j).getKey());
-//                        j++;
-//                        count++;
                         flag = false;
                         break;
                     }
@@ -139,9 +139,7 @@ public class ChineseSetExpansion {
                     set.add(entity);
                     count++;
                 }
-//                set.add((String) list.get(j).getKey());
                 j++;
-//                count++;
             }
         }
     }
@@ -214,10 +212,7 @@ public class ChineseSetExpansion {
                 String undeterminedEntity = line.substring(start, end);
 //                System.out.println(undeterminedEntity);
 //                System.out.println(line);
-                if (!entities.contains(undeterminedEntity)) {
-//                    if(undeterminedEntity.indexOf("月日") != -1){
-//                        continue;
-//                    }
+                if (!entitySet.contains(undeterminedEntity)) {
                     if (undeterminedEntities.containsKey(undeterminedEntity)) {
                         Integer count = undeterminedEntities.get(undeterminedEntity);
                         if (!relation.get(undeterminedEntity).equals(context)) {
@@ -236,47 +231,44 @@ public class ChineseSetExpansion {
     }
 
     public static void main(String[] args) {
-        String indexDir = "/Users/pengwei/IdeaProjects/myLucene/THUCNewsIndex";
+        //初识时添加的实体
+        entitySet.add("韩国");
+        entitySet.add("法国");
+        entitySet.add("加拿大");
+        entitySet.add("埃及");
+        entitySet.add("新西兰");
 
-        entities.add("日本");
-        entities.add("法国");
-        entities.add("南非");
-        entities.add("加拿大");
-        entities.add("澳大利亚");
+        System.out.println("第0次迭代：" + entitySet);
 
-        System.out.println("第0次迭代：" + entities);
-
-        for (int i = 0; i < 10; i++) {
-            for (String entity : entities) {
+        for (int i = 0; i < times; i++) {
+            for (String entity : entitySet) {
                 try {
-                    search(indexDir, entity);
+                    searchContext(indexDir, entity);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            rankMapByValue(contexts, contextsSet, 20, new Comparator<Integer>() {
+            rankMapByValue(undeterminedContexts, contextSet, 20, new Comparator<Integer>() {
                 @Override
                 public int compare(Integer o1, Integer o2) {
                     return Integer.compare(o1, o2);
                 }
             });
-//            System.out.println(contextsSet);
-            for (String context : contextsSet) {
+            for (String context : contextSet) {
                 try {
                     searchEntities(indexDir, context);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            rankMapByValue(undeterminedEntities, entities, 4, new Comparator<Integer>() {
+            rankMapByValue(undeterminedEntities, entitySet, 4, new Comparator<Integer>() {
                 @Override
                 public int compare(Integer o1, Integer o2) {
                     return Integer.compare(o1, o2);
                 }
             });
-//            entities.remove("年月日");
-            System.out.println("第" + (i + 1) + "次迭代：" + entities);
-//            contexts.clear();
+            System.out.println("第" + (i + 1) + "次迭代：" + entitySet);
+//            undeterminedContexts.clear();
             undeterminedEntities.clear();
             relation.clear();
         }
