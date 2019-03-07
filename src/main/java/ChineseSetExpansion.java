@@ -62,8 +62,6 @@ public class ChineseSetExpansion {
                 line = line.replaceAll("\\u00A0", "");
                 line = line.replaceAll("[\\pP‘’“”]", "");
                 line = line.replaceAll("\\d+", "");
-//                line = line.replaceAll("[\\pP‘’“”]+", "@");
-//                line = line.replaceAll("\\d+", "【");
                 line = line.replaceAll(" ", "");
 //                System.out.println(line);
                 int start = line.indexOf(q);
@@ -90,15 +88,8 @@ public class ChineseSetExpansion {
 //        String entity;
         String contextAbove;
         String contextBelow;
-//        System.out.println(line);
-//        System.out.println("start:" + start);
-//        System.out.println("end:" + end);
-//        System.out.println("length:" + line.length());
         if (start < size) {
             contextAbove = new String(line.substring(0, start));
-//            for (int i = 0; i < size - start; i++) {
-//                contextAbove = " " + contextAbove;
-//            }
             contextAbove = "^" + contextAbove;
         } else {
             contextAbove = new String(line.substring((start - size), start));
@@ -106,9 +97,6 @@ public class ChineseSetExpansion {
 
         if (end + size >= line.length()) {
             contextBelow = new String(line.substring(end + 1));
-//            for (int i = 0; i < size - line.length() + end - 2; i++) {
-//                contextBelow = contextBelow + " ";
-//            }
             contextBelow = contextBelow + "$";
         } else {
             contextBelow = new String(line.substring(end + 1, end + 1 + size));
@@ -136,10 +124,24 @@ public class ChineseSetExpansion {
             if (set.contains(list.get(j).getKey())) {
                 j++;
             } else {
-//                for(String )
-                set.add((String) list.get(j).getKey());
+                boolean flag = true;
+                String entity = (String) list.get(j).getKey();
+                for(String str : set){
+                    if(entity.indexOf(str) != -1){
+//                        set.add((String) list.get(j).getKey());
+//                        j++;
+//                        count++;
+                        flag = false;
+                        break;
+                    }
+                }
+                if(flag){
+                    set.add(entity);
+                    count++;
+                }
+//                set.add((String) list.get(j).getKey());
                 j++;
-                count++;
+//                count++;
             }
         }
     }
@@ -162,21 +164,6 @@ public class ChineseSetExpansion {
         PhraseQuery query = builder.build();
 
 
-//        BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-//
-//        newContext = newContext.replaceAll("\\s*", "");
-//        for (int i = 0; i < newContext.length(); i++) {
-//            QueryParser parser = new QueryParser("contents", new StandardAnalyzer());
-//            String p = ((Character) newContext.charAt(i)).toString();
-//
-//            if (!p.equals(" ")) {
-//
-//                Query query = parser.parse(QueryParser.escape(p));
-//                booleanQuery.add(query, BooleanClause.Occur.MUST);
-//            }
-//        }
-//        BooleanQuery query = booleanQuery.build();
-
 
         TopDocs docs = searcher.search(query, 1000);//开始查询，查询前条数据，将记录保存在docs中
 
@@ -193,8 +180,6 @@ public class ChineseSetExpansion {
                 line = line.replaceAll("\\u00A0", "");
                 line = line.replaceAll("[\\pP‘’“”]", "");
                 line = line.replaceAll("\\d+", "");
-//                line = line.replaceAll("[\\pP‘’“”]+", "@");
-//                line = line.replaceAll("\\d+", "【");
 
                 line = line.replaceAll(" ", "");
                 context = context.replaceAll(" ", "");
@@ -202,14 +187,6 @@ public class ChineseSetExpansion {
                 getEntities(context, line);
             }
         }
-//        System.out.println(undeterminedEntities);
-//        rankMapByValue(undeterminedEntities, entities, 3, new Comparator<Integer>() {
-//            @Override
-//            public int compare(Integer o1, Integer o2) {
-//                return Integer.compare(o1, o2);
-//            }
-//        });
-
         reader.close();
     }
 
@@ -220,8 +197,6 @@ public class ChineseSetExpansion {
         Pattern r = Pattern.compile(context);
         Matcher m = r.matcher(line);
         String[] contexts = context.split("\\.\\" + regex + "\\?");
-//        System.out.println(contexts[0]);
-//        System.out.println(contexts[1]);
         int l1 = contexts[0].length();
         int l2 = contexts[1].length();
         while (m.find()) {
@@ -240,12 +215,15 @@ public class ChineseSetExpansion {
 //                System.out.println(undeterminedEntity);
 //                System.out.println(line);
                 if (!entities.contains(undeterminedEntity)) {
+//                    if(undeterminedEntity.indexOf("月日") != -1){
+//                        continue;
+//                    }
                     if (undeterminedEntities.containsKey(undeterminedEntity)) {
                         Integer count = undeterminedEntities.get(undeterminedEntity);
                         if (!relation.get(undeterminedEntity).equals(context)) {
                             count *= 2;
                             relation.put(undeterminedEntity, context);
-                            System.out.println("HAHAHAHAHAHA:" + undeterminedEntity);
+//                            System.out.println("HAHAHAHAHAHA:" + undeterminedEntity);
                         }
                         undeterminedEntities.put(undeterminedEntity, count + 1);
                     } else {
@@ -258,22 +236,17 @@ public class ChineseSetExpansion {
     }
 
     public static void main(String[] args) {
-
-//        String a = "胡刚和刘雨在同一个单位工作离婚后的刘雨同胡刚发展成了恋人";
-//        String b = "展成了.{2,3}?$";
-//        Pattern r = Pattern.compile(b);
-//        Matcher m = r.matcher(a);
-//        System.out.println(m.find());
-
         String indexDir = "/Users/pengwei/IdeaProjects/myLucene/THUCNewsIndex";
 
-        entities.add("武汉");
-        entities.add("杭州");
-        entities.add("深圳");
-        entities.add("西安");
-        entities.add("哈尔滨");
+        entities.add("日本");
+        entities.add("法国");
+        entities.add("南非");
+        entities.add("加拿大");
+        entities.add("澳大利亚");
 
-        for (int i = 0; i < 10; i++) {
+        System.out.println("第0次迭代：" + entities);
+
+        for (int i = 0; i < 5; i++) {
             for (String entity : entities) {
                 try {
                     search(indexDir, entity);
@@ -281,7 +254,7 @@ public class ChineseSetExpansion {
                     e.printStackTrace();
                 }
             }
-            rankMapByValue(contexts, contextsSet, 10, new Comparator<Integer>() {
+            rankMapByValue(contexts, contextsSet, 20, new Comparator<Integer>() {
                 @Override
                 public int compare(Integer o1, Integer o2) {
                     return Integer.compare(o1, o2);
@@ -295,26 +268,19 @@ public class ChineseSetExpansion {
                     e.printStackTrace();
                 }
             }
-            rankMapByValue(undeterminedEntities, entities, 5, new Comparator<Integer>() {
+            rankMapByValue(undeterminedEntities, entities, 4, new Comparator<Integer>() {
                 @Override
                 public int compare(Integer o1, Integer o2) {
                     return Integer.compare(o1, o2);
                 }
             });
+//            entities.remove("年月日");
             System.out.println("第" + (i + 1) + "次迭代：" + entities);
-            contexts.clear();
+//            contexts.clear();
             undeterminedEntities.clear();
+            relation.clear();
         }
     }
 }
 
-//class Relation{
-//    String context;
-//    String entity;
-//
-//    public Relation(String context, String entity){
-//        this.context = context;
-//        this.entity = entity;
-//    }
-//}
 
